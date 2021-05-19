@@ -31,11 +31,11 @@ public class QuranStore: CoreDataStorable {
 				assertionFailure(error.localizedDescription)
 			}
 
-			if storeDesc.url == nil {
-				assertionFailure("No Store URL")
-			}
-
-			print("URL - " + storeDesc.url!.absoluteString)
+			if let url = storeDesc.url {
+        print("URL - " + url.absoluteString)
+      } else {
+        assertionFailure("No Store URL")
+      }
 		}
 		return container
 	}
@@ -60,4 +60,18 @@ public class QuranStore: CoreDataStorable {
 
 		QuranStore.save()
 	}
+
+  public static func surahName(for number: Int16, in language: Language) -> String {
+    switch language {
+    case .english: return english[Int(number-1)]
+    case .arabic: return arabic[Int(number-1)]
+    }
+  }
+
+  static let english = SurahsEnglish().allNames
+  static let arabic = SurahsArabic().allNames
+
+  public enum Language {
+    case english, arabic
+  }
 }
