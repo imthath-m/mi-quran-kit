@@ -53,8 +53,8 @@ public class QuranStore: CoreDataStorable {
 
 		ALL_VERSES.forEach {
 			let verse = CDVerse(context: QuranStore.context)
-			verse.ayah = Int16($0.ayah)
-			verse.surah = Int16($0.sura)
+			verse.ayah = $0.ayah
+			verse.surah = $0.sura
 			verse.text = $0.text
 		}
 

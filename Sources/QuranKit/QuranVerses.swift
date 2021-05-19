@@ -1,8 +1,8 @@
 import Foundation
 
 struct Verse {
-		let sura: Int
-		let ayah: Int
+		let sura: Int16
+		let ayah: Int16
 		let text: String
 }
 
