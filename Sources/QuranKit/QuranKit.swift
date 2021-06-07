@@ -62,17 +62,6 @@ public class QuranStore: CoreDataStorable {
 		return container
 	}
 
-  private static var isEmpty: Bool {
-    let fetchRequest: NSFetchRequest<CDVerse> = CDVerse.fetchRequest()
-    fetchRequest.fetchLimit = 1
-    do {
-      return try context.fetch(fetchRequest).isEmpty
-    } catch {
-      assertionFailure(error.localizedDescription)
-      return true
-    }
-  }
-
 	public func loadVerses() {
 		guard Self.isEmpty else {
 			return
@@ -99,7 +88,27 @@ public class QuranStore: CoreDataStorable {
     Int16(verses(from: source).count)
   }
 
-  private static func verses(in surah: Int16) -> [CDVerse] {
+  public static func surahName(for number: Int16, in language: Language) -> String {
+    guard number > 0, number <= 114 else { return "" }
+    switch language {
+    case .english: return english[Int(number-1)]
+    case .arabic: return arabic[Int(number-1)]
+    }
+  }
+
+  // MARK: - Internal API
+  internal static var isEmpty: Bool {
+    let fetchRequest: NSFetchRequest<CDVerse> = CDVerse.fetchRequest()
+    fetchRequest.fetchLimit = 1
+    do {
+      return try context.fetch(fetchRequest).isEmpty
+    } catch {
+      assertionFailure(error.localizedDescription)
+      return true
+    }
+  }
+
+  internal static func verses(in surah: Int16) -> [CDVerse] {
     let fetchRequest: NSFetchRequest<CDVerse> = CDVerse.fetchRequest()
     fetchRequest.predicate = NSPredicate(format: "surah = %d", surah)
     fetchRequest.sortDescriptors = [
@@ -113,7 +122,7 @@ public class QuranStore: CoreDataStorable {
     }
   }
 
-  private static func verses(in range: VersesRange) -> [CDVerse] {
+  internal static func verses(in range: VersesRange) -> [CDVerse] {
     let fetchRequest: NSFetchRequest<CDVerse> = CDVerse.fetchRequest()
     fetchRequest.predicate = NSPredicate(
       format: "surah >= %d AND surah <= %d",
@@ -143,17 +152,11 @@ public class QuranStore: CoreDataStorable {
     }
   }
 
-  public static func surahName(for number: Int16, in language: Language) -> String {
-    guard number > 0, number <= 114 else { return "" }
-    switch language {
-    case .english: return english[Int(number-1)]
-    case .arabic: return arabic[Int(number-1)]
-    }
-  }
+  internal static let english = SurahsEnglish().allNames
+  internal static let arabic = SurahsArabic().allNames
+}
 
-  static let english = SurahsEnglish().allNames
-  static let arabic = SurahsArabic().allNames
-
+extension QuranStore {
   public enum Language {
     case english, arabic
   }
@@ -165,10 +168,10 @@ public enum VerseSource {
 }
 
 public struct VersesRange {
-  var startSurah: Int16
-  var startAyah: Int16
-  var endSurah: Int16
-  var endAyah: Int16
+  public var startSurah: Int16
+  public var startAyah: Int16
+  public var endSurah: Int16
+  public var endAyah: Int16
 
   public init(startSurah: Int16, startAyah: Int16, endSurah: Int16, endAyah: Int16) {
     self.startSurah = startSurah
