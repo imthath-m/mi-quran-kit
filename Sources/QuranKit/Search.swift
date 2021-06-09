@@ -34,13 +34,24 @@ extension QuranStore {
       return []
     }
 
+    let sameSurah = startingVerses.compactMap { surah, ayah -> VerseSource? in
+      let startAyah = ayah ?? 1
+      if let endAyah = getAyahNumber(inSurah: surah, from: parts.last),
+         endAyah >= startAyah {
+        return VerseSource.range(.init(startSurah: surah, startAyah: startAyah, endSurah: surah, endAyah: endAyah))
+      }
+
+      return nil
+    }
+
+
     let endingVerses = getVerses(from: parts.last)
 
     guard !endingVerses.isEmpty else {
-      return startingVerses.map { .fullSurah($0.0) }
+      return sameSurah + startingVerses.map { .fullSurah($0.0) }
     }
 
-    return startingVerses
+    let result = startingVerses
       .map { firstVerse -> [VerseSource] in
         let firstAyah: Int16 = firstVerse.1 ?? 1
 
@@ -62,6 +73,8 @@ extension QuranStore {
           }
       }
       .flatMap { $0 }
+
+    return sameSurah + result
   }
 
   private static func getSources(from subString: String.SubSequence?) -> [VerseSource] {
@@ -97,23 +110,8 @@ extension QuranStore {
       return []
     }
 
-    let surahs = getSurahNumbers(from: parts.first)
-
-    guard !surahs.isEmpty else {
-      return []
-    }
-
-    return surahs.map { surah in
-//      if let ayah = getAyahNumber(inSurah: surah, from: parts.last) {
-//        return (surah, ayah)
-//      }
-
-      return (surah, getAyahNumber(inSurah: surah, from: parts.last))
-    }
-
-//    if result.isEmpty {
-//      return [
-//    }
+    return getSurahNumbers(from: parts.first)
+      .map { ($0, getAyahNumber(inSurah: $0, from: parts.last)) }
   }
 
   private static func getSurahNumbers(from subString: String.SubSequence?) -> [Int16] {
