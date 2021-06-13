@@ -84,8 +84,8 @@ public class QuranStore: CoreDataStorable {
     }
   }
 
-  public static func versesCount(from source: VerseSource) -> Int16 {
-    Int16(verses(from: source).count)
+  public static func versesCount(from source: VerseSource) -> Int {
+    verses(from: source).count
   }
 
   public static func surahName(for number: Int16, in language: Language) -> String {

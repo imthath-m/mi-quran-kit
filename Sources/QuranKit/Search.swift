@@ -79,14 +79,20 @@ extension QuranStore {
 
   private static func getSources(from subString: String.SubSequence?) -> [VerseSource] {
     getVerses(from: subString)
-      .map {
-        let surah = $0.0
+      .flatMap { verse -> [VerseSource] in
+        let surah = verse.0
 
-        if let ayah = $0.1 {
-          return .range(.init(startSurah: surah, startAyah: ayah, endSurah: surah, endAyah: ayah))
+        if let ayah = verse.1 {
+          var result = [VerseSource.range(.init(startSurah: surah, startAyah: ayah, endSurah: surah, endAyah: ayah))]
+          let lastAyah = verses(in: surah).count
+          if ayah < lastAyah {
+            // so if user enter fajr:10, we'll add Al Fajr:10-30 also as a result.
+            result.append(.range(.init(startSurah: surah, startAyah: ayah, endSurah: surah, endAyah: Int16(lastAyah))))
+          }
+          return result
         }
 
-        return .fullSurah($0.0)
+        return [VerseSource.fullSurah(surah)]
       }
   }
 
@@ -97,6 +103,22 @@ extension QuranStore {
 
     if string.contains(":") {
       return getSurahAndAyahNumber(from: string.split(separator: ":"))
+    } else {
+      let parts = string.trimmingCharacters(in: .whitespacesAndNewlines).split(separator: " ")
+      if parts.count > 1,
+         let lastPart = parts.last,
+         let ayah = Int16(lastPart) {
+
+        // it would work perfectly without the if condtion, as the else condition also handles when you have only one word
+        // before the ayah number, but the else condition performs a lot of operations and mutations
+        // which can be avoided when we know that the count it two
+        if parts.count == 2 {
+          return getSurahNumbers(from: parts.first).map { ($0, ayah) }
+        } else {
+          let surahString = parts.dropLast().joined(separator: " ")
+          return getSurahNumbers(from: Substring(surahString)).map { ($0, ayah) }
+        }
+      }
     }
 
     return getSurahNumbers(from: subString).map { ($0, nil) }
