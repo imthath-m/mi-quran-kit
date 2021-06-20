@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import MINetworkKit
 
 extension QuranStore {
   public static func search(keyword: String) -> [VerseSource] {

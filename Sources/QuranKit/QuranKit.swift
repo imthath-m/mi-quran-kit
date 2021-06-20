@@ -25,6 +25,7 @@ public class QuranStore: CoreDataStorable {
 
   private init(loadstoreByDefault: Bool = true) {
     self.persistantContainer = QuranStore.makeContainer(loadstoreByDefault: loadstoreByDefault)
+//    AudioService.shared.fetchVerseByVerseReciters()
 	}
 
 	open var modelName: String { "Verses "}
