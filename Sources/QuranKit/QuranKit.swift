@@ -25,7 +25,7 @@ public class QuranStore: CoreDataStorable {
 
   private init(loadstoreByDefault: Bool = true) {
     self.persistantContainer = QuranStore.makeContainer(loadstoreByDefault: loadstoreByDefault)
-//    AudioService.shared.fetchVerseByVerseReciters()
+    AudioService.shared.fetchVerseByVerseReciters()
 	}
 
 	open var modelName: String { "Verses "}
@@ -158,8 +158,8 @@ public class QuranStore: CoreDataStorable {
 }
 
 extension QuranStore {
-  public enum Language {
-    case english, arabic
+  public enum Language: String {
+    case english = "en", arabic = "ar"
   }
 }
 

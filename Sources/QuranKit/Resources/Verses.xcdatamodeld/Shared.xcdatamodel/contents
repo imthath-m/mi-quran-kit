@@ -1,11 +1,24 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="18154" systemVersion="20F71" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="19141.11" systemVersion="20F71" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="CDReciter" representedClassName="CDReciter" syncable="YES" codeGenerationType="class">
+        <attribute name="arName" optional="YES" attributeType="String"/>
+        <attribute name="enName" optional="YES" attributeType="String"/>
+        <attribute name="identifier" optional="YES" attributeType="String"/>
+        <attribute name="isEnabled" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="lang" optional="YES" attributeType="String"/>
+        <uniquenessConstraints>
+            <uniquenessConstraint>
+                <constraint value="identifier"/>
+            </uniquenessConstraint>
+        </uniquenessConstraints>
+    </entity>
     <entity name="CDVerse" representedClassName="CDVerse" syncable="YES" codeGenerationType="class">
         <attribute name="ayah" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="surah" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="text" optional="YES" attributeType="String"/>
     </entity>
     <elements>
+        <element name="CDReciter" positionX="-63" positionY="9" width="128" height="104"/>
         <element name="CDVerse" positionX="-63" positionY="-18" width="128" height="74"/>
     </elements>
 </model>
