@@ -22,14 +22,15 @@ let package = Package(
 //				.exact("5.7.4-sqlcipher")
 //			)
 		.package(path: "~/Desktop/Frameworks/MILocalStore"),
+    .package(path: "~/Desktop/Frameworks/MINetworkKit")
 	],
 	targets: [
 		// Targets are the basic building blocks of a package. A target can define a module or a test suite.
 		// Targets can depend on other targets in this package, and on products in packages this package depends on.
 		.target(
 			name: "QuranKit",
-			dependencies: [.product(name: "MILocalStore", package: "MILocalStore")],
-			resources: [.copy("Resources/CD_Quran.sqlite")]
+			dependencies: [.product(name: "MILocalStore", package: "MILocalStore"),
+                     .product(name: "MINetworkKit", package: "MINetworkKit")]
 		),
 		.testTarget(
 			name: "QuranKitTests",
