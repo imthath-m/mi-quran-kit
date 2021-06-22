@@ -70,7 +70,9 @@ struct AudioMeta: Codable {
 }
 
 class AudioService {
-  private init() { }
+  private init() {
+    initSesssion()
+  }
 
   public static let shared: AudioService = .init()
 
@@ -123,7 +125,7 @@ class AudioService {
     guard !reciterID.isEmpty else { return }
 
     let request = AudioRequest.audioURL(reciterID: reciterID, surah: verse.surah, ayah: verse.ayah)
-    getVerseAudioMeta.perform(request) { [weak self] result in
+    getVerseAudioMeta.perform(request) { result in
       switch result {
       case .success(let response):
 //        self?.downloadAudio(fromURL: response.data.audio)
@@ -152,12 +154,26 @@ class AudioService {
 
   func play(url: URL) {
     print("playing \(url)")
-    
     let playerItem = AVPlayerItem(url: url)
-    
-    self.player.insert(playerItem, after: nil)
-    //        player!.que
-    player.volume = 1.0
+    player.insert(playerItem, after: nil)
     player.play()
+  }
+
+  func initSesssion() {
+    do {
+      try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.defaultToSpeaker, .allowAirPlay])
+      print("Playback OK")
+    } catch {
+      print(error)
+    }
+  }
+
+  func activateSesssion(_ flag: Bool) {
+    do {
+      try AVAudioSession.sharedInstance().setActive(flag)
+      print("Session is Active - \(flag)")
+    } catch {
+      print(error)
+    }
   }
 }

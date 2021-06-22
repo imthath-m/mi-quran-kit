@@ -20,7 +20,18 @@ extension QuranStore {
     }
   }
 
-  public static func playAudio(for source: VerseSource, reciterID: String) {
+  public static func stopAudio() {
+    audio.player.pause()
+    audio.player.removeAllItems()
+  }
+
+  public static func pauseAudio() {
+    audio.player.pause()
+  }
+
+  private static var audio: AudioService { .shared }
+
+  public static func playAudio(for source: VerseSource, reciterID: String, repeats repeatCount: Int = 7) {
 //    for verse in verses(from: source) {
 //      AudioService.shared.fetchAudioOfReciter(withID: reciterID, for: verse)
 //    }
@@ -30,26 +41,31 @@ extension QuranStore {
     guard let firstVerse = verses.first else { return }
     let count = verses.count
 
-    AudioService.shared.fetchAudioURLOfReciter(withID: reciterID, for: firstVerse) { urlString in
+    audio.fetchAudioURLOfReciter(withID: reciterID, for: firstVerse) { urlString in
       guard !urlString.isEmpty,
             let url = URL(string: urlString),
             let lastPath = url.pathComponents.last?.split(separator: ".").first,
-            let number = Int(lastPath) else {
+            let firstVerse = Int(lastPath) else {
               return
             }
 
-      let lastVerse = number + count
+      let lastVerse = firstVerse + count - 1
       let parts = urlString.components(separatedBy: reciterID)
 
       guard let firstPart = parts.first else {
         return
       }
 
-      for ayah in number...lastVerse {
-        let newString = firstPart + reciterID + "/\(ayah).mp3"
-        guard let newURL = URL(string: newString) else { return }
-        AudioService.shared.play(url: newURL)
+      audio.player.removeAllItems()
+      audio.activateSesssion(true)
+      for _ in 1...repeatCount {
+        for ayah in firstVerse...lastVerse {
+          let newString = firstPart + reciterID + "/\(ayah).mp3"
+          guard let newURL = URL(string: newString) else { return }
+          audio.play(url: newURL)
+        }
       }
+      audio.activateSesssion(false)
     }
   }
 
