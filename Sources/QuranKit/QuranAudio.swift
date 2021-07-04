@@ -8,12 +8,43 @@
 import Foundation
 import SwiftUI
 import CoreData
+import AVFoundation
 
-extension QuranStore {
+public extension Hashable {
+  func store(in set: inout Set<AnyHashable>) {
+    _ = set.insert(self)
+  }
+}
+
+extension VerseSource: Equatable {
+  public static func == (lhs: VerseSource, rhs: VerseSource) -> Bool {
+    lhs.uniqueID == rhs.uniqueID
+  }
+
+  public var uniqueID: String {
+    switch self {
+    case .fullSurah(let surah): return "fullSurah_\(surah)"
+    case .range(let range): return "range_\(range.startSurah):\(range.startAyah)-\(range.endSurah):\(range.endAyah)"
+    }
+  }
+}
+
+public class QuranAudio: ObservableObject {
+  private init() { }
+
+  public static let shared: QuranAudio = .init()
+
+  var currentSource: VerseSource?
+
+  var audioPlayer: AVQueuePlayer { AudioService.shared.player }
+
+  @Published
+  public var isPlaying: Bool = false
+
   public static func availableReciters(language: QuranStore.Language = .english) -> [CDReciter] {
     let fetchRequest: NSFetchRequest<CDReciter> = CDReciter.fetchRequest()
     do {
-      return try context.fetch(fetchRequest)
+      return try QuranStore.context.fetch(fetchRequest)
     } catch {
       assertionFailure(error.localizedDescription)
       return []
@@ -31,12 +62,17 @@ extension QuranStore {
 
   private static var audio: AudioService { .shared }
 
+  public static func isPlaying(_ source: VerseSource?) -> Bool {
+    guard let source = source, let current = shared.currentSource else { return false }
+    return source.uniqueID == current.uniqueID
+  }
+
   public static func playAudio(for source: VerseSource, reciterID: String, repeats repeatCount: Int = 7) {
 //    for verse in verses(from: source) {
 //      AudioService.shared.fetchAudioOfReciter(withID: reciterID, for: verse)
 //    }
 
-    let verses = verses(from: source)
+    let verses = QuranStore.verses(from: source)
 
     guard let firstVerse = verses.first else { return }
     let count = verses.count
@@ -45,34 +81,48 @@ extension QuranStore {
       guard !urlString.isEmpty,
             let url = URL(string: urlString),
             let lastPath = url.pathComponents.last?.split(separator: ".").first,
-            let firstVerse = Int(lastPath) else {
+            let firstAyah = Int(lastPath) else {
               return
             }
 
-      let lastVerse = firstVerse + count - 1
+      let lastAyah = firstAyah + count - 1
       let parts = urlString.components(separatedBy: reciterID)
 
       guard let firstPart = parts.first else {
         return
       }
 
+      guard shared.currentSource != source else {
+        // resumes current audio
+        audio.player.play()
+        return
+      }
+
       audio.player.removeAllItems()
       audio.activateSesssion(true)
+
+      shared.currentSource = source
       for _ in 1...repeatCount {
-        for ayah in firstVerse...lastVerse {
-          let newString = firstPart + reciterID + "/\(ayah).mp3"
-          guard let newURL = URL(string: newString) else { return }
-          audio.play(url: newURL)
+        if firstVerse.insertBismiBefore {
+          play(baseURL: firstPart, reciterID: reciterID, ayah: 1)
+        }
+        for ayah in firstAyah...lastAyah {
+          play(baseURL: firstPart, reciterID: reciterID, ayah: ayah)
         }
       }
-      audio.activateSesssion(false)
     }
+  }
+
+  private static func play(baseURL: String, reciterID: String, ayah: Int) {
+    let urlString = baseURL + reciterID + "/\(ayah).mp3"
+    guard let newURL = URL(string: urlString) else { return }
+    audio.play(url: newURL)
   }
 
   internal static func saveReciters(_ reciters: [Reciter]) {
     for reciter in reciters {
       guard !reciter.identifier.isEmpty else { continue }
-      let result = CDReciter(context: context)
+      let result = CDReciter(context: QuranStore.context)
       result.identifier = reciter.identifier
       result.arName = reciter.arabicName
       result.enName = reciter.englishName
@@ -80,7 +130,13 @@ extension QuranStore {
       result.isEnabled = reciter.identifier == "" ? true : false
     }
 
-    save()
+    QuranStore.save()
+  }
+}
+
+public extension CDVerse {
+  var insertBismiBefore: Bool {
+    ayah == 1 && surah != 1 && surah != 9
   }
 }
 

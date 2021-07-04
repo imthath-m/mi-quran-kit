@@ -70,8 +70,20 @@ struct AudioMeta: Codable {
 }
 
 class AudioService {
+  private lazy var subscriptions = Set<AnyHashable>()
   private init() {
     initSesssion()
+    observePlayerStatus()
+  }
+
+  private func observePlayerStatus() {
+    player.observe(\.rate) { /*[weak self]*/ avPlayer, status in
+      let isPlaying = avPlayer.rate != 0
+      QuranAudio.shared.isPlaying = isPlaying
+//      if !isPlaying {
+//        self?.activateSesssion(false)
+//      }
+    }.store(in: &subscriptions)
   }
 
   public static let shared: AudioService = .init()
@@ -95,7 +107,7 @@ class AudioService {
         }
 //        response.data.forEach { print($0)}
 //        print(response.data)
-        QuranStore.saveReciters(response.data)
+        QuranAudio.saveReciters(response.data)
       case .failure(let error):
         print(error.localizedDescription)
       }
@@ -152,11 +164,15 @@ class AudioService {
 
   var player: AVQueuePlayer = AVQueuePlayer(items: [])
 
+  let audioPlayerThread = DispatchQueue.global(qos: .userInitiated)
+
   func play(url: URL) {
-    print("playing \(url)")
-    let playerItem = AVPlayerItem(url: url)
-    player.insert(playerItem, after: nil)
-    player.play()
+    audioPlayerThread.sync {
+      print("playing \(url)")
+      let playerItem = AVPlayerItem(url: url)
+      player.insert(playerItem, after: nil)
+      player.play()
+    }
   }
 
   func initSesssion() {
