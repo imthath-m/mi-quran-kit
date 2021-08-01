@@ -52,12 +52,20 @@ public class QuranAudio: ObservableObject {
   }
 
   public static func stopAudio() {
+    shared.isPlaying = false
     audio.player.pause()
     audio.player.removeAllItems()
+    shared.currentSource = nil
+    repeatCount = 0
+    reciterID = ""
   }
 
+  static var userPaused: Bool = false
+
   public static func pauseAudio() {
+    shared.isPlaying = false
     audio.player.pause()
+    userPaused = true
   }
 
   private static var audio: AudioService { .shared }
@@ -67,15 +75,43 @@ public class QuranAudio: ObservableObject {
     return source.uniqueID == current.uniqueID
   }
 
-  public static func playAudio(for source: VerseSource, reciterID: String, repeats repeatCount: Int = 7) {
-//    for verse in verses(from: source) {
-//      AudioService.shared.fetchAudioOfReciter(withID: reciterID, for: verse)
-//    }
+  public static func playAudio(for source: VerseSource, reciterID: String, repeats repeatCount: Int = 2) {
+    guard shared.currentSource != source else {
+      // resumes current audio
+      shared.isPlaying = true
+      audio.player.play()
+      userPaused = false
+      return
+    }
 
+    shared.currentSource = source
+
+    Self.reciterID = reciterID
+    Self.repeatCount = repeatCount - 1
+    _playAudio(for: source, reciterID: reciterID)
+  }
+
+  static var reciterID: String = ""
+  static var repeatCount = 7
+
+  static func repeatIfReuired() {
+    guard !userPaused,
+          let source = shared.currentSource,
+          repeatCount > 0,
+          !reciterID.isEmpty else {
+      shared.isPlaying = false
+      return
+    }
+
+    repeatCount -= 1
+    _playAudio(for: source, reciterID: reciterID)
+  }
+
+  private static func _playAudio(for source: VerseSource, reciterID: String) {
     let verses = QuranStore.verses(from: source)
-
     guard let firstVerse = verses.first else { return }
     let count = verses.count
+    shared.isPlaying = true
 
     audio.fetchAudioURLOfReciter(withID: reciterID, for: firstVerse) { urlString in
       guard !urlString.isEmpty,
@@ -92,31 +128,22 @@ public class QuranAudio: ObservableObject {
         return
       }
 
-      guard shared.currentSource != source else {
-        // resumes current audio
-        audio.player.play()
-        return
-      }
-
       audio.player.removeAllItems()
       audio.activateSesssion(true)
-
-      shared.currentSource = source
-      for _ in 1...repeatCount {
-        if firstVerse.insertBismiBefore {
-          play(baseURL: firstPart, reciterID: reciterID, ayah: 1)
-        }
-        for ayah in firstAyah...lastAyah {
-          play(baseURL: firstPart, reciterID: reciterID, ayah: ayah)
-        }
+      if firstVerse.insertBismiBefore {
+        play(baseURL: firstPart, reciterID: reciterID, ayah: 1)
       }
+      for ayah in firstAyah..<lastAyah {
+        play(baseURL: firstPart, reciterID: reciterID, ayah: ayah)
+      }
+      play(baseURL: firstPart, reciterID: reciterID, ayah: lastAyah, observeItem: true)
     }
   }
 
-  private static func play(baseURL: String, reciterID: String, ayah: Int) {
+  private static func play(baseURL: String, reciterID: String, ayah: Int, observeItem: Bool = false) {
     let urlString = baseURL + reciterID + "/\(ayah).mp3"
     guard let newURL = URL(string: urlString) else { return }
-    audio.play(url: newURL)
+    audio.play(url: newURL, observeItem: observeItem)
   }
 
   internal static func saveReciters(_ reciters: [Reciter]) {
@@ -137,92 +164,5 @@ public class QuranAudio: ObservableObject {
 public extension CDVerse {
   var insertBismiBefore: Bool {
     ayah == 1 && surah != 1 && surah != 9
-  }
-}
-
-public extension View {
-  func reciterPicer(isPresented: Binding<Bool>, selected: Binding<Set<CDReciter>>) -> some View {
-    modifier(ReciterPickerModifier(isPresented: isPresented, reciters: selected))
-  }
-}
-
-struct ReciterPickerModifier: ViewModifier {
-
-  @Binding var isPresented: Bool
-  @Binding var reciters: Set<CDReciter>
-
-  func body(content: Content) -> some View {
-    content
-      .sheet(isPresented: $isPresented, onDismiss: nil, content: {
-        ReciterPicker(selectedReciters: $reciters)
-          .environment(\.managedObjectContext, QuranStore.context)
-      })
-  }
-}
-
-public extension CDReciter {
-  var arabicName: String { arName ?? "" }
-  var englishName: String { enName ?? "" }
-  var id: String { identifier ?? "" }
-  var language: QuranStore.Language {
-    guard let lang = lang,
-            let result = QuranStore.Language(rawValue: lang) else {
-      return .arabic
-    }
-
-    return result
-  }
-}
-
-struct ReciterPicker: View {
-  @Environment(\.presentationMode) var presentationMode
-
-  @FetchRequest(
-    entity: CDReciter.entity(),
-    sortDescriptors: [NSSortDescriptor(key: "enName", ascending: true)],
-    predicate: nil,
-    animation: nil
-  )
-  var reciters: FetchedResults<CDReciter>
-
-  @Binding var selectedReciters: Set<CDReciter>
-
-  public init(selectedReciters: Binding<Set<CDReciter>>) {
-    _selectedReciters = selectedReciters
-  }
-
-  public var body: some View {
-    NavigationView {
-      List(reciters) { reciter in
-        row(for: reciter)
-      }
-      .navigationBarTitle(Text("Select Reciters"))
-      .navigationBarItems(trailing: Button("Done", action: {
-        presentationMode.wrappedValue.dismiss()
-      }))
-    }
-  }
-
-  func row(for reciter: CDReciter) -> some View {
-    HStack {
-      VStack(alignment: .leading) {
-        Text(reciter.englishName)
-        Text(reciter.arabicName)
-//          .font(.footnote)
-          .foregroundColor(.secondary)
-      }
-
-      Spacer()
-
-      Image(systemName: reciter.isEnabled ? "checkmark.circle.fill" : "circle")
-        .imageScale(.large)
-    }
-    .contentShape(Rectangle())
-    .onTapGesture {
-      reciter.isEnabled.toggle()
-//      if !selectedReciters.insert(reciter).inserted {
-//        selectedReciters.remove(reciter)
-//      }
-    }
   }
 }
