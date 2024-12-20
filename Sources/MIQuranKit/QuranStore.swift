@@ -1,4 +1,4 @@
-import MILocalStore
+import MIDataStore
 import CoreData
 
 var QuranKitBundle: Bundle { Bundle.module }

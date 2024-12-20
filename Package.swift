@@ -1,11 +1,11 @@
-// swift-tools-version:5.3
+// swift-tools-version:5.7
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
 
 let package = Package(
 	name: "MIQuranKit",
-	platforms: [.iOS(.v14), .watchOS(.v6), .macOS(.v10_15)],
+  platforms: [.iOS(.v15)],
 	products: [
 		// Products define the executables and libraries a package produces, and make them visible to other packages.
 		.library(
@@ -21,16 +21,16 @@ let package = Package(
 //				url: "https://github.com/groue/GRDB.swift",
 //				.exact("5.7.4-sqlcipher")
 //			)
-		.package(path: "~/Documents/Frameworks/MILocalStore"),
-    .package(path: "~/Documents/Frameworks/MINetworkKit")
+    .package(url: "https://github.com/imthath-m/mi-data-store", from: "0.1.0"),
+    .package(url: "https://github.com/imthath-m/mi-network-kit", from: "1.0.5")
 	],
 	targets: [
 		// Targets are the basic building blocks of a package. A target can define a module or a test suite.
 		// Targets can depend on other targets in this package, and on products in packages this package depends on.
 		.target(
 			name: "MIQuranKit",
-			dependencies: [.product(name: "MILocalStore", package: "MILocalStore"),
-                     .product(name: "MINetworkKit", package: "MINetworkKit")]
+			dependencies: [.product(name: "MIDataStore", package: "mi-data-store"),
+                     .product(name: "MINetworkKit", package: "mi-network-kit")]
 		),
 		.testTarget(
 			name: "QuranKitTests",
