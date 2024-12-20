@@ -4,13 +4,13 @@
 import PackageDescription
 
 let package = Package(
-	name: "QuranKit",
+	name: "MIQuranKit",
 	platforms: [.iOS(.v14), .watchOS(.v6), .macOS(.v10_15)],
 	products: [
 		// Products define the executables and libraries a package produces, and make them visible to other packages.
 		.library(
-			name: "QuranKit",
-			targets: ["QuranKit"]
+			name: "MIQuranKit",
+			targets: ["MIQuranKit"]
 		),
 	],
 	dependencies: [
@@ -21,20 +21,20 @@ let package = Package(
 //				url: "https://github.com/groue/GRDB.swift",
 //				.exact("5.7.4-sqlcipher")
 //			)
-		.package(path: "~/Desktop/Frameworks/MILocalStore"),
-    .package(path: "~/Desktop/Frameworks/MINetworkKit")
+		.package(path: "~/Documents/Frameworks/MILocalStore"),
+    .package(path: "~/Documents/Frameworks/MINetworkKit")
 	],
 	targets: [
 		// Targets are the basic building blocks of a package. A target can define a module or a test suite.
 		// Targets can depend on other targets in this package, and on products in packages this package depends on.
 		.target(
-			name: "QuranKit",
+			name: "MIQuranKit",
 			dependencies: [.product(name: "MILocalStore", package: "MILocalStore"),
                      .product(name: "MINetworkKit", package: "MINetworkKit")]
 		),
 		.testTarget(
 			name: "QuranKitTests",
-			dependencies: ["QuranKit"]
+			dependencies: ["MIQuranKit"]
 		),
 	]
 )
